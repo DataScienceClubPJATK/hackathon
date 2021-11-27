@@ -1,13 +1,10 @@
 ##
 import pandas as pd
-import geopandas as gpd
 import googlemaps
 import unidecode
 import re
-import folium
-import matplotlib.pyplot as plt
-import itertools
 from tqdm import tqdm
+import datetime
 ##
 
 def get_prenormalised(df: pd.DataFrame):
@@ -52,10 +49,12 @@ def get_geocodes(df):
     df['lat_n'] = df.apply(lambda row: row['geocode']['lat'], axis=1)
     df['lng_n'] = df.apply(lambda row: row['geocode']['lng'], axis=1)
     df['place_id_n'] = df.apply(lambda row: row['geocode']['place_id'], axis=1)
+    df['OpenTime'] = df.apply(lambda row: datetime.datetime.fromisoformat(f"{datetime.date.today()} {row['OpenTime']}") if not row['isStart']  else None, axis=1)
+    df['CloseTime'] = df.apply(lambda row: datetime.datetime.fromisoformat(f"{datetime.date.today()} {row['CloseTime']}") if not row['isStart'] else None, axis=1)
     return df
 
 
-def get_df_with_geocodes(locations_path: str, start_path: str):
+def get_df_with_geocodes(start_path: str, locations_path: str):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
     df = pd.read_json(locations_path)
     df['isStart'] = False
@@ -65,6 +64,10 @@ def get_df_with_geocodes(locations_path: str, start_path: str):
     df = get_prenormalised(df)
     df = get_api_data(gmaps, df)
     df = get_geocodes(df)
+    df.drop_duplicates(subset='formatted_address_n', keep='last', inplace=True)
+    df.reset_index(inplace=True)
+    df = df.rename(columns={'index':'idx'})
+    df.index.name = "idx"
     return df
 
 def reshape_distance_response(resp):
@@ -74,16 +77,19 @@ def reshape_distance_response(resp):
 
 def get_data_time_matrix(df):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
-    places = df[['formatted_address_n','OpenTime', 'CloseTime']].to_dict(orient='records')
+    places = df[['formatted_address_n','OpenTime', 'CloseTime', 'idx']].to_dict(orient='records')
 
     product = [(place_A, place_B) for place_A in places for place_B in places if place_A != place_B]
     df_matrix = pd.DataFrame()
-    print(places)
     for pair in tqdm(product):
         matrix = gmaps.distance_matrix(pair[0]['formatted_address_n'], pair[1]['formatted_address_n'], mode='driving')
         response = reshape_distance_response(matrix['rows'])
-        ret_dict = {"from": pair[0]['formatted_address_n'], "to": pair[1]['formatted_address_n'], "distance": response['distance'], "duration": response['duration'], "dest_closeTime": pair[1]['CloseTime']}
+        ret_dict = {"from_idx": pair[0]['idx'], "to_idx": pair[1]['idx'], "from": pair[0]['formatted_address_n'],
+                    "to": pair[1]['formatted_address_n'], "distance": response['distance'],
+                    "duration": response['duration'], "dest_closeTime": pair[1]['CloseTime']}
         df_matrix = df_matrix.append(ret_dict, ignore_index=True)
+    df_matrix = df_matrix.astype({"from_idx": int, "to_idx": int})
+    df_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
     return df_matrix
 
 
@@ -92,12 +98,14 @@ if __name__ == '__main__':
     locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
     start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
 
-    df = get_df_with_geocodes(locations_path, start_path)
-
-##
-
+    df = get_df_with_geocodes(start_path, locations_path)
+    ##
+    df
+    ##
+    df['OpenTime'].dtype
+    ##
     matrix = get_data_time_matrix(df)
     print(matrix)
-##
+    ##
 
 
