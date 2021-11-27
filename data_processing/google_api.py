@@ -4,8 +4,8 @@ import geopandas as gpd
 import googlemaps
 import unidecode
 import re
-
-
+import folium
+import matplotlib.pyplot as plt
 ##
 
 def get_prenormalised(df: pd.DataFrame):
@@ -53,14 +53,30 @@ def get_geocodes(df):
     return df
 
 
-##
-if __name__ == "__main__":
+def get_df_with_geocodes(locations_path: str, start_path: str):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
-    data_path = r"locations.json"
-    df = pd.read_json(data_path)
+    df = pd.read_json(locations_path)
+    df['isStart'] = False
+    _df = pd.read_json(start_path, typ='series')
+    _df['isStart'] = True
+    df = df.append(_df, ignore_index=True)
     df = get_prenormalised(df)
     df = get_api_data(gmaps, df)
     df = get_geocodes(df)
+    return df
+
+
+def get_data_time_matrix(df):
+
+
+##
+locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
+start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
+
+df = get_df_with_geocodes(locations_path, start_path)
+
+
+
 
 ##
 
