@@ -67,6 +67,10 @@ def get_df_with_geocodes(locations_path: str, start_path: str):
 
 
 def get_data_time_matrix(df):
+    gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
+    places=df.loc[5:10].formatted_address_n.tolist()
+    return gmaps.distance_matrix(places,places)
+
 
 
 ##
@@ -75,8 +79,11 @@ start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
 
 df = get_df_with_geocodes(locations_path, start_path)
 
+##
+matrix = get_data_time_matrix(df)
 
-
+##
+df_matrix = pd.DataFrame(matrix)
 
 ##
 
