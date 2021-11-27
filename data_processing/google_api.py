@@ -6,6 +6,8 @@ import unidecode
 import re
 import folium
 import matplotlib.pyplot as plt
+import itertools
+from tqdm import tqdm
 ##
 
 def get_prenormalised(df: pd.DataFrame):
@@ -65,25 +67,37 @@ def get_df_with_geocodes(locations_path: str, start_path: str):
     df = get_geocodes(df)
     return df
 
+def reshape_distance_response(resp):
+    resp = resp[0]['elements'][0]
+    return {'distance': resp['distance']['value'], 'duration': resp['duration']['value']}
+
 
 def get_data_time_matrix(df):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
-    places=df.loc[5:10].formatted_address_n.tolist()
-    return gmaps.distance_matrix(places,places)
+    places = df[['formatted_address_n','OpenTime', 'CloseTime']].to_dict(orient='records')
 
+    product = [(place_A, place_B) for place_A in places for place_B in places if place_A != place_B]
+    df_matrix = pd.DataFrame()
+    print(places)
+    for pair in tqdm(product):
+        matrix = gmaps.distance_matrix(pair[0]['formatted_address_n'], pair[1]['formatted_address_n'], mode='driving')
+        response = reshape_distance_response(matrix['rows'])
+        ret_dict = {"from": pair[0]['formatted_address_n'], "to": pair[1]['formatted_address_n'], "distance": response['distance'], "duration": response['duration'], "dest_closeTime": pair[1]['CloseTime']}
+        df_matrix = df_matrix.append(ret_dict, ignore_index=True)
+    return df_matrix
 
 
 ##
-locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
-start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
+if __name__ == '__main__':
+    locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
+    start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
 
-df = get_df_with_geocodes(locations_path, start_path)
-
-##
-matrix = get_data_time_matrix(df)
+    df = get_df_with_geocodes(locations_path, start_path)
 
 ##
-df_matrix = pd.DataFrame(matrix)
 
+    matrix = get_data_time_matrix(df)
+    print(matrix)
 ##
+
 
