@@ -17,7 +17,11 @@ class TrackFinder:
         self.vehicle.distance_driven += distance
         history_log = {'point_id':choosen_point,'time_spent': self.environment.virtual_time, 'distance_driven': self.vehicle.distance_driven}
         self.vehicle.track_history = self.vehicle.track_history.append(history_log, ignore_index=True)
+        print(history_log)
 
+    def find_track(self):
+        for i in range(0, len(self.environment.points) -1):
+            self.move_vehicle()
 
 class Vehicle:
     def __init__(self,start_point):
@@ -72,9 +76,9 @@ class Environment:
 locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
 start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
 ##
-tr = TrackFinder(start_path, locations_path, 5)
+tr = TrackFinder(start_path, locations_path, 120)
 ##
-
+tr.find_track()
 
 
 ##
