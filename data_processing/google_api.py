@@ -93,8 +93,8 @@ def get_data_time_matrix(df, limit=25):
 
 ##
 if __name__ == '__main__':
-    locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
-    start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
+    locations_path = r"C:\Users\Rafał\hackathon/locations.json"
+    start_path = r"C:\Users\Rafał\hackathon/startPoint.json"
 
     df = get_df_with_geocodes(start_path, locations_path)
 
