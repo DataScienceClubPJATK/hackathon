@@ -6,11 +6,11 @@ from data_processing.google_api import get_df_with_geocodes, get_data_time_matri
 class TrackFinder:
     def __init__(self, start_point_path, points_path, seconds_spent_on_point):
         self.environment = Environment(start_point_path, points_path, seconds_spent_on_point)
-        start_point_idx = self.environment.points[self.environment.points['isStart']]['idx'].values[0]
+        start_point_idx = self.environment.points[self.environment.points['isStart']].index.values[0]
         self.vehicle = Vehicle(start_point_idx)
 
     def move_vehicle(self):
-        quered_time_matrix = self.environment.query_point_time()
+        quered_time_matrix = self.environment.query_point_time(self.vehicle.actual_point)
         choosen_point = self.vehicle.choose_point(quered_time_matrix)
         distance = self.environment.visit_point(self.vehicle.actual_point, choosen_point)
         self.vehicle.actual_point = choosen_point
@@ -38,7 +38,10 @@ class Environment:
         self.seconds_spent_on_point = seconds_spent_on_point
         self.points = get_df_with_geocodes(start_point_path, points_path)
         self.points['visited'] = False
-        self.time_matrix = get_data_time_matrix(self.points)
+        #self.time_matrix = get_data_time_matrix(self.points)
+        self.time_matrix = pd.read_csv('time_matrix.csv')
+        self.time_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
+
         self.virtual_time = self.query_min_time()
 
     def query_min_time(self):
@@ -49,7 +52,9 @@ class Environment:
         return points[(points['OpenTime'] <= self.virtual_time) & (points['CloseTime'] >= self.virtual_time)].index.tolist()
 
     def query_point_time(self, actual_point):
-        open_points_time_matrix = self.time_matrix.loc[actual_point].loc[self.query_open_points_indexes()]
+        quered = self.query_open_points_indexes()
+        quered = [x for x in quered if x != actual_point]
+        open_points_time_matrix = self.time_matrix.loc[actual_point].loc[quered]
         return open_points_time_matrix
 
     add_seconds_to_vtime = lambda self, t: self.virtual_time + pd.Timedelta(t, unit='s')
@@ -67,7 +72,7 @@ class Environment:
 
 locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
 start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
-
+##
 tr = TrackFinder(start_path, locations_path, 5)
 ##
 

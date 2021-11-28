@@ -65,9 +65,6 @@ def get_df_with_geocodes(start_path: str, locations_path: str):
     df = get_api_data(gmaps, df)
     df = get_geocodes(df)
     df.drop_duplicates(subset='formatted_address_n', keep='last', inplace=True)
-    df.reset_index(inplace=True)
-    df = df.rename(columns={'index':'idx'})
-    df.index.name = "idx"
     return df
 
 def reshape_distance_response(resp):
@@ -77,14 +74,14 @@ def reshape_distance_response(resp):
 
 def get_data_time_matrix(df):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
-    places = df[['formatted_address_n','OpenTime', 'CloseTime', 'idx']].to_dict(orient='records')
+    places = df[['formatted_address_n','OpenTime', 'CloseTime', 'index']].to_dict(orient='records')
 
     product = [(place_A, place_B) for place_A in places for place_B in places if place_A != place_B]
     df_matrix = pd.DataFrame()
     for pair in tqdm(product):
         matrix = gmaps.distance_matrix(pair[0]['formatted_address_n'], pair[1]['formatted_address_n'], mode='driving')
         response = reshape_distance_response(matrix['rows'])
-        ret_dict = {"from_idx": pair[0]['idx'], "to_idx": pair[1]['idx'], "from": pair[0]['formatted_address_n'],
+        ret_dict = {"from_idx": pair[0]['index'], "to_idx": pair[1]['index'], "from": pair[0]['formatted_address_n'],
                     "to": pair[1]['formatted_address_n'], "distance": response['distance'],
                     "duration": response['duration'], "dest_closeTime": pair[1]['CloseTime']}
         df_matrix = df_matrix.append(ret_dict, ignore_index=True)
