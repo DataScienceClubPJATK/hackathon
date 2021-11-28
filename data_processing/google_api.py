@@ -74,7 +74,8 @@ def reshape_distance_response(resp):
 
 def get_data_time_matrix(df, limit=25):
     gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
-    places = df[['formatted_address_n','OpenTime', 'CloseTime', 'index']]
+    places = df[['formatted_address_n','OpenTime', 'CloseTime']]
+    places['index'] = df.index
     df_matrix = pd.DataFrame()
     for _, place_A in tqdm(places.iterrows()):
         for places_B in sliced(places, limit):
@@ -90,4 +91,14 @@ def get_data_time_matrix(df, limit=25):
     return df_matrix
 
 
+##
+if __name__ == '__main__':
+    locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
+    start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
+
+    df = get_df_with_geocodes(start_path, locations_path)
+
+
+
+##
 

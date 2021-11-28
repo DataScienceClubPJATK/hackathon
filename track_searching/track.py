@@ -43,8 +43,8 @@ class Environment:
         self.points = get_df_with_geocodes(start_point_path, points_path)
         self.points['visited'] = False
         self.time_matrix = get_data_time_matrix(self.points)
-        self.time_matrix = pd.read_csv('time_matrix.csv')
-        self.time_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
+        #self.time_matrix = pd.read_csv('time_matrix.csv')
+        #self.time_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
         self.virtual_time = self.query_min_time()
 
     def query_min_time(self):
@@ -79,9 +79,4 @@ tr = TrackFinder(start_path, locations_path, 120)
 ##
 tr.find_track()
 
-
-##
-
-
-##
 
