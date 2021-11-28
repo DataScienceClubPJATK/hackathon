@@ -23,15 +23,15 @@ class Vehicle:
     def __init__(self,start_point):
         self.actual_point = start_point
         self.distance_driven = 0
-        self.track_history = pd.DataFrame(columns=['point_id, time_spent, distance_driven']) #point_id, virutal time timestamp (work done)
+        self.track_history = pd.DataFrame(columns=['point_id', 'time_spent', 'distance_driven']) #point_id, virutal time timestamp (work done)
 
     def choose_point(self, quered_time_matrix, sortby = 'duration'):
         assert sortby in ['duration', 'distance']
         if sortby == 'duration':
-            sorted = quered_time_matrix[self.actual_point].sort_values(by='duration')
+            sorted = quered_time_matrix.sort_values(by='duration')
         elif sortby == 'distance':
-            sorted = quered_time_matrix[self.actual_point].sort_values(by='distance')
-        return sorted.loc[0]
+            sorted = quered_time_matrix.sort_values(by='distance')
+        return sorted.head(1).index.values[0]
 
 class Environment:
     def __init__(self, start_point_path, points_path, seconds_spent_on_point):
@@ -60,13 +60,12 @@ class Environment:
     add_seconds_to_vtime = lambda self, t: self.virtual_time + pd.Timedelta(t, unit='s')
 
     def visit_point(self, start_point_idx, end_point_idx):
-        distance_matrix_row = self.time_matrix[start_point_idx, end_point_idx]
-        if start_point_idx == 0:
-            self.points.loc[start_point_idx]['visited'] = True #t0
-        else:
-            self.virtual_time = self.add_seconds_to_vtime(distance_matrix_row['duration']) # #t0 -> t1
+        distance_matrix_row = self.time_matrix.loc[start_point_idx, end_point_idx]
+        self.points.at[start_point_idx, 'visited'] = True #t0
+        #zaczynamy od 8:00
+        self.virtual_time = self.add_seconds_to_vtime(distance_matrix_row['duration']) # #t0 -> t1
         self.virtual_time = self.add_seconds_to_vtime(self.seconds_spent_on_point) #self.seconds_spent_on_point #t1 -> t2
-        self.points.loc[end_point_idx]['visited'] = True
+        self.points.at[end_point_idx, 'visited'] = True
         return distance_matrix_row['distance']
 ##
 
@@ -74,5 +73,12 @@ locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
 start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
 ##
 tr = TrackFinder(start_path, locations_path, 5)
+##
+
+
+
+##
+
+
 ##
 
