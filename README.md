@@ -24,4 +24,6 @@ W przypadku gdyby ktoś posiadał repozytorium prywatne, proszę o dodanie dost�
 
 ## Linki
 [strona wydarzenia](https://hackathon.postdata.pl/)
+
+## Prezentacja
 [link do prezentacji](https://prezi.com/view/LpRahB9gyMOYvIgjGWSR/)
