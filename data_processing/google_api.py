@@ -6,6 +6,8 @@ import re
 from tqdm import tqdm
 from more_itertools import sliced
 import datetime
+from .api_key import API_KEY
+
 ##
 
 def get_prenormalised(df: pd.DataFrame):
@@ -13,7 +15,6 @@ def get_prenormalised(df: pd.DataFrame):
         lambda row: f'{row["Street"]} {row["StreetNumber"]}, {row["PostalCode"]} {row["City"]}', axis=1)
     df['prenormalised'] = df['prenormalised'].apply(unidecode.unidecode)
     return df
-
 
 def reshape_geocode(geocode):
     geocode_dict = {}
@@ -56,7 +57,7 @@ def get_geocodes(df):
 
 
 def get_df_with_geocodes(start_path: str, locations_path: str):
-    gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
+    gmaps = googlemaps.Client(key=API_KEY)
     df = pd.read_json(locations_path)
     df['isStart'] = False
     _df = pd.read_json(start_path, typ='series')
@@ -72,14 +73,15 @@ def reshape_distance_response(resp):
     return [{'distance': res['distance']['value'], 'duration': res['duration']['value']} for res in resp['rows'][0]['elements']]
 
 
-def get_data_time_matrix(df, limit=25):
-    gmaps = googlemaps.Client(key='AIzaSyC9TxvgLQ-laKATF0wZBxTZw3uYOMfF1oM')
+def get_data_time_matrix(df, limit=25, arr_time=None, current_point=None):
+    gmaps = googlemaps.Client(key=API_KEY)
     places = df[['formatted_address_n','OpenTime', 'CloseTime']]
     places['index'] = df.index
     df_matrix = pd.DataFrame()
-    for _, place_A in tqdm(places.iterrows()):
+    A_places = places if current_point is None else places.loc[current_point:current_point]
+    for _, place_A in tqdm(A_places.iterrows()):
         for places_B in sliced(places, limit):
-            matrix = gmaps.distance_matrix(place_A['formatted_address_n'], places_B['formatted_address_n'], mode='driving')
+            matrix = gmaps.distance_matrix(place_A['formatted_address_n'], places_B['formatted_address_n'], mode='driving', arrival_time=arr_time)
             for i, res in enumerate(reshape_distance_response(matrix)):
                 ret_dict = {"from_idx": place_A['index'], "to_idx": places_B.iloc[i]['index'], "from": place_A['formatted_address_n'],
                             "to": places_B.iloc[i]['formatted_address_n'], "distance": res['distance'],
@@ -87,16 +89,19 @@ def get_data_time_matrix(df, limit=25):
                 df_matrix = df_matrix.append(ret_dict, ignore_index=True)
     df_matrix = df_matrix.astype({"from_idx": int, "to_idx": int})
     df_matrix = df_matrix[df_matrix['from_idx'] != df_matrix['to_idx']]
-    df_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
+    try:
+        df_matrix.set_index(['from_idx', 'to_idx'], inplace=True)
+    except:
+        pass
     return df_matrix
 
-
 ##
-if __name__ == '__main__':
-    locations_path = r"C:\Users\Rafał\hackathon/locations.json"
-    start_path = r"C:\Users\Rafał\hackathon/startPoint.json"
-
-    df = get_df_with_geocodes(start_path, locations_path)
+# if __name__ == '__main__':
+#     locations_path = r"/Users/damian/PycharmProjects/hackathon/locations.json"
+#     start_path = r"/Users/damian/PycharmProjects/hackathon/startPoint.json"
+#
+#     df = get_df_with_geocodes(start_path, locations_path)
+#
 
 
 
